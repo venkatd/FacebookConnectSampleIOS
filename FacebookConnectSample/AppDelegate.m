@@ -29,8 +29,77 @@
     // Override point for customization after application launch.
   self.viewController = [[[ViewController alloc] initWithNibName:@"ViewController" bundle:nil] autorelease];
   self.window.rootViewController = self.viewController;
-    [self.window makeKeyAndVisible];
-    return YES;
+  [self.window makeKeyAndVisible];
+  
+  [self initFacebookObject];
+  [self createFacebookLoginButton];
+  [self createFacebookLogoutButton];
+  
+  return YES;
+}
+
+- (void) initFacebookObject
+{
+  // create a facebook instance with the given app id
+  facebook = [[Facebook alloc] initWithAppId:@"183435348401103" andDelegate:self];
+  // if fb login credentials are already saved away, get them from there
+  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+  if ([defaults objectForKey:@"FBAccessTokenKey"] 
+      && [defaults objectForKey:@"FBExpirationDateKey"]) {
+    facebook.accessToken = [defaults objectForKey:@"FBAccessTokenKey"];
+    facebook.expirationDate = [defaults objectForKey:@"FBExpirationDateKey"];
+  }
+}
+
+- (void) createFacebookLoginButton
+{
+  // Add the logout button
+  UIButton *loginButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+  loginButton.frame = CGRectMake(40, 40, 200, 40);
+  
+  [loginButton setTitle:@"Login with Facebook" forState:UIControlStateNormal];
+  [loginButton addTarget:self action:@selector(loginButtonClicked)
+         forControlEvents:UIControlEventTouchUpInside];
+  
+  [self.viewController.view addSubview:loginButton];
+}
+
+- (void) createFacebookLogoutButton
+{
+  // Add the logout button
+  UIButton *logoutButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+  logoutButton.frame = CGRectMake(40, 120, 200, 40);
+  
+  [logoutButton setTitle:@"Log Out" forState:UIControlStateNormal];
+  [logoutButton addTarget:self action:@selector(logoutButtonClicked)
+         forControlEvents:UIControlEventTouchUpInside];
+  
+  [self.viewController.view addSubview:logoutButton];
+}
+
+// Method that gets called when the logout button is pressed
+- (void) logoutButtonClicked 
+{
+  NSLog(@"logoutButtonClicked");
+  [facebook logout];
+}
+
+- (BOOL) isUserLoggedIn
+{
+  return [facebook isSessionValid];
+}
+
+- (void) showLoginPrompt
+{
+  [facebook authorize:nil];
+}
+
+- (void) loginButtonClicked 
+{
+  NSLog(@"loginButtonClicked");
+  if (![self isUserLoggedIn]) {
+    [self showLoginPrompt];
+  }
 }
 
 - (void)applicationWillResignActive:(UIApplication *)application
@@ -65,7 +134,11 @@
  */
 - (void)fbDidLogin
 {
-  
+  NSLog(@"fbDidLogin");
+  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+  [defaults setObject:[facebook accessToken] forKey:@"FBAccessTokenKey"];
+  [defaults setObject:[facebook expirationDate] forKey:@"FBExpirationDateKey"];
+  [defaults synchronize];
 }
 
 /**
@@ -73,7 +146,7 @@
  */
 - (void)fbDidNotLogin:(BOOL)cancelled
 {
-  
+  NSLog(@"fbDidNotLogin");
 }
 
 /**
@@ -86,7 +159,7 @@
 - (void)fbDidExtendToken:(NSString*)accessToken
                expiresAt:(NSDate*)expiresAt
 {
-  
+  NSLog(@"fbDidExtendToken");
 }
 
 /**
@@ -94,7 +167,14 @@
  */
 - (void)fbDidLogout
 {
-  
+  NSLog(@"fbDidLogout");
+  // Remove saved authorization information if it exists
+  NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+  if ([defaults objectForKey:@"FBAccessTokenKey"]) {
+    [defaults removeObjectForKey:@"FBAccessTokenKey"];
+    [defaults removeObjectForKey:@"FBExpirationDateKey"];
+    [defaults synchronize];
+  }
 }
 
 /**
@@ -106,7 +186,20 @@
  */
 - (void)fbSessionInvalidated
 {
-  
+  NSLog(@"fbSessionInvalidated");
 }
+
+
+// Pre iOS 4.2 support
+- (BOOL)application:(UIApplication *)application handleOpenURL:(NSURL *)url {
+  return [facebook handleOpenURL:url]; 
+}
+
+// For iOS 4.2+ support
+- (BOOL)application:(UIApplication *)application openURL:(NSURL *)url
+  sourceApplication:(NSString *)sourceApplication annotation:(id)annotation {
+  return [facebook handleOpenURL:url]; 
+}
+
 
 @end
