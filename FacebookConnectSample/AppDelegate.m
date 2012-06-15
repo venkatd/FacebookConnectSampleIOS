@@ -32,8 +32,8 @@
   [self.window makeKeyAndVisible];
   
   [self initFacebookObject];
-  [self createFacebookLoginButton];
-  [self createFacebookLogoutButton];
+  [self addFacebookLoginButton];
+  [self addFacebookLogoutButton];
   
   return YES;
 }
@@ -51,7 +51,7 @@
   }
 }
 
-- (void) createFacebookLoginButton
+- (void) addFacebookLoginButton
 {
   // Add the logout button
   UIButton *loginButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
@@ -64,7 +64,7 @@
   [self.viewController.view addSubview:loginButton];
 }
 
-- (void) createFacebookLogoutButton
+- (void) addFacebookLogoutButton
 {
   // Add the logout button
   UIButton *logoutButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
